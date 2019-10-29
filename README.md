@@ -1,6 +1,6 @@
-# logo-lang
+# koopa
 
-An interpreter for a Logo-like language.
+A breakpoint debugger for a toy Lisp.
 
 ## Tests
 
