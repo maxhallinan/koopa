@@ -1,9 +1,41 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Koopa</title>
+    <link rel="stylesheet" href="styles.css"></link>
+    <link rel="preload" as="font" type="font/woff2" href="https://static.maxhallinan.com/fonts/klim/TiemposTextWeb-Regular.woff2" crossorigin/>
+    <link rel="preload" as="font" type="font/woff2" href="https://static.maxhallinan.com/fonts/klim/TiemposHeadlineWeb-Semibold.woff2" crossorigin/>
+    <link rel="preload" as="font" type="font/woff2" href="https://static.maxhallinan.com/fonts/mb/TriplicateT3Code-Regular.woff2" crossorigin/>
   </head>
   <body>
+    <article class="prose">
+      <header>
+        <h1>Koopa</h1>
+        <p class="byline">By <a href="https://maxhallinan.com">Max Hallinan</a></p>
+      </header>
+      <p>A breakpoint debugger for a toy Lisp.</p>
+      <figure class="koopa">
+        <code>
+          <pre>
+(define null?
+  (lambda (xs)
+    (equal? xs '())))
+
+(define member?
+  (lambda (x xs)
+    (if (null? xs)
+      (quote t)
+      (if (equal? x (car xs))
+        'true
+        (member? x (cdr xs))))))
+
+(member? 'c '(a b c))
+          </pre>
+        </code>
+      </figure>
+    </article>
     <script src="bundle.js" type="text/javascript"></script>
   </body>
 </html>

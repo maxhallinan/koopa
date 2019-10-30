@@ -11,6 +11,7 @@ You can edit this file as you like.
     , "debug"
     , "effect"
     , "foldable-traversable"
+    , "halogen"
     , "newtype"
     , "node-buffer"
     , "node-fs-aff"
@@ -25,6 +26,8 @@ You can edit this file as you like.
     , "strings"
     , "tuples"
     , "unicode"
+    , "web-dom"
+    , "web-html"
     ]
 , packages =
     ./packages.dhall

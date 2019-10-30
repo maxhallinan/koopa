@@ -1,0 +1,144 @@
+@import "./grid.css";
+
+@font-face {
+  font-family: "TiemposText";
+  src: url("https://static.maxhallinan.com/fonts/klim/TiemposTextWeb-Regular.woff2") format("woff2"),
+       url("https://static.maxhallinan.com/fonts/klim/TiemposTextWeb-Regular.woff") format("woff");
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "TiemposText";
+  src: url("https://static.maxhallinan.com/fonts/klim/TiemposTextWeb-RegularItalic.woff2") format("woff2"),
+       url("https://static.maxhallinan.com/fonts/klim/TiemposTextWeb-RegularItalic.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: "TiemposHeadline";
+  src: url("https://static.maxhallinan.com/fonts/klim/TiemposHeadlineWeb-Semibold.woff2") format("woff2"),
+       url("https://static.maxhallinan.com/fonts/klim/TiemposHeadlineWeb-Semibold.woff") format("woff");
+  font-weight: 800;
+}
+
+@font-face {
+  font-family: "TriplicateT3Code";
+  src: url("https://static.maxhallinan.com/fonts/mb/TriplicateT3Code-Regular.woff2") format("woff2"),
+       url("https://static.maxhallinan.com/fonts/mb/TriplicateT3Code-Regular.woff") format("woff");
+  font-weight: 400;
+}
+
+* {
+  box-sizing: border-box;
+  text-rendering: optimizelegibility;
+}
+
+html {
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+body {
+  background-color: #fdfdfd;
+  color: #333;
+  font-family: "TiemposText", serif;
+  font-weight: 400;
+  margin: 0;
+  padding: 0;
+}
+
+figure {
+  margin: 0;
+  padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: #222;
+  font-family: "TiemposHeadline", serif;
+  font-weight: 800;
+}
+
+.prose {
+  font-family: "TiemposText", serif;
+  padding: 1.2rem 1.44rem;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  font-family: "TiemposHeadline", serif;
+  font-weight: 800;
+  margin: 0;
+}
+
+.prose h1 {
+  font-size: 2.07rem;
+  line-height: 1;
+  margin: 1.44rem 0;
+}
+
+.prose h1:first-of-type {
+  margin-top: 0;
+}
+
+.prose header {
+  margin: 0 0 1rem;
+}
+
+.prose header h1 {
+  align-items: baseline;
+  display: flex;
+  font-size: 2.07rem;
+  line-height: 1;
+  margin: 0 0 0.48rem 0;
+}
+
+.prose .byline {
+  font-size: 0.69rem;
+  font-family: "TiemposText", serif;
+  font-weight: 400;
+  line-height: 1;
+  margin: 0;
+}
+
+.prose .byline a,
+.prose .byline a:visited {
+  color: #333;
+}
+
+.prose p {
+  font-size: 1rem;
+  line-height: 1.2;
+  margin: 0 0 1rem;
+}
+
+.koopa {
+  margin: 2.07rem 0;
+}
+
+.editor {
+  background-color: #fdfdfd;
+  border: 1px solid #333;
+}
+
+.editor textarea {
+  background: none;
+  border: none;
+  box-shadow: none;
+  display: block;
+  flex: 1;
+  font-family: "TriplicateT3Code", monospace;
+  font-size: 1rem;
+  padding: 0.83rem 0.58rem;
+  resize: none;
+  width: 100%;
+}
