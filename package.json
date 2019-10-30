@@ -8,5 +8,8 @@
     "name": "Max Hallinan",
     "email": "maxhallinan@riseup.net",
     "url": "www.maxhallinan.com"
+  },
+  "dependencies": {
+    "codemirror": "^5.49.2"
   }
 }

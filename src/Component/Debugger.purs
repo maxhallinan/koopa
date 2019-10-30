@@ -7,6 +7,7 @@ import Component.Editor as Editor
 import Component.Util (className)
 import Data.Maybe (Maybe(..))
 import Data.Symbol (SProxy(..))
+import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
 
@@ -18,7 +19,7 @@ data Action
 
 type ChildSlots = (editor :: Editor.Slot Unit, console :: Console.Slot Unit)
 
-component :: forall q o m. Monad m => H.Component HH.HTML q Input o m
+component :: forall q o m. MonadAff m => H.Component HH.HTML q Input o m
 component = 
   H.mkComponent 
     { eval: H.mkEval H.defaultEval
@@ -26,7 +27,7 @@ component =
     , render
     }
 
-render :: forall m. Monad m => State -> H.ComponentHTML Action ChildSlots m
+render :: forall m. MonadAff m => State -> H.ComponentHTML Action ChildSlots m
 render state =
   HH.div 
     [ className "debugger" ]

@@ -1,4 +1,5 @@
 @import "./grid.css";
+@import "./codemirror.css";
 
 @font-face {
   font-family: "TiemposText";
@@ -128,17 +129,35 @@ h6 {
 .editor {
   background-color: #fdfdfd;
   border: 1px solid #333;
+  padding: 0.83rem 0.58rem;
 }
 
-.editor textarea {
+/* CodeMirror */
+
+.CodeMirror {
   background: none;
-  border: none;
-  box-shadow: none;
-  display: block;
-  flex: 1;
+  color: #333;
   font-family: "TriplicateT3Code", monospace;
   font-size: 1rem;
-  padding: 0.83rem 0.58rem;
-  resize: none;
-  width: 100%;
+  font-weight: 400;
+  height: auto;
+  line-height: 1.44;
+}
+
+.CodeMirror-lines {
+  padding: 0; /* Remove padding so CodeMirror instance and ProseMirror instance have the same height.*/
+}
+
+.CodeMirror pre.CodeMirror-line,
+.CodeMirror pre.CodeMirror-line-like {
+  padding: 0; /* Override the 4px of padding the beginning and end of the line. Otherwise there is a strange space between the cursor and the code.*/
+}
+
+.CodeMirror-gutters {
+  background: none;
+  border: none;
+}
+
+.CodeMirror-linenumber {
+  padding: 0 0.58rem 0 0;
 }
