@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
-import Halogen.HTML.Properties as P
+import Halogen.HTML.Properties as HP
 
 type Input = { initialContent :: String }
 
@@ -29,7 +29,7 @@ type ChildSlots = ()
 
 type Slot = H.Slot Query Msg
 
-component :: forall q o m. MonadAff m => H.Component HH.HTML q Input Msg m
+component :: forall q m. MonadAff m => H.Component HH.HTML q Input Msg m
 component =
   H.mkComponent
     { eval: H.mkEval $ H.defaultEval
@@ -48,7 +48,7 @@ initialState i =
   }
 
 render :: forall m. MonadAff m => State -> H.ComponentHTML Action ChildSlots m
-render _ = HH.div [ className "editor" ] [ HH.div [ P.ref (H.RefLabel "codemirror") ] [] ]
+render _ = HH.div [ className "editor" ] [ HH.div [ HP.ref (H.RefLabel "codemirror") ] [] ]
 
 handleAction :: forall m. MonadAff m => Action -> H.HalogenM State Action () Msg m Unit
 handleAction = case _ of

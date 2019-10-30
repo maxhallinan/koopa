@@ -33,8 +33,8 @@ render state =
     [ className "debugger" ]
     [ HH.div 
         [ className "debugger-body grid" ] 
-        [ HH.div [ className "column small-9" ] [ HH.slot (SProxy :: _ "editor") unit Editor.component state handleEditorMsg ]
-        , HH.div [ className "column small-3" ] [ HH.slot (SProxy :: _ "console") unit Console.component unit handleConsoleMsg ]
+        [ HH.div [ className "column small-12" ] [ HH.slot (SProxy :: _ "editor") unit Editor.component state handleEditorMsg ]
+        , HH.div [ className "column small-12" ] [ HH.slot (SProxy :: _ "console") unit Console.component unit handleConsoleMsg ]
         ]
     ]
 

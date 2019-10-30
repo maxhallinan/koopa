@@ -20,7 +20,7 @@ type ChildSlots = ()
 
 type Slot = H.Slot Query Msg
 
-component :: forall q i o m. MonadAff m => H.Component HH.HTML q i Msg m
+component :: forall q i m. MonadAff m => H.Component HH.HTML q i Msg m
 component = 
   H.mkComponent 
     { eval: H.mkEval H.defaultEval

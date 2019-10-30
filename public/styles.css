@@ -91,6 +91,12 @@ h6 {
   margin-top: 0;
 }
 
+.prose h2 {
+  font-size: 1.73rem;
+  line-height: 1.2;
+  margin: 1.73rem 0 0.58rem;
+}
+
 .prose header {
   margin: 0 0 1rem;
 }
@@ -122,14 +128,26 @@ h6 {
   margin: 0 0 1rem;
 }
 
+.prose a,
+.prose a:focus,
+.prose a:hover,
+.prose a:visited {
+  color: #333;
+  text-decoration: underline;
+}
+
 .koopa {
   margin: 2.07rem 0;
 }
 
+.koopa:last-of-type {
+  margin-bottom: 0;
+}
+
 .editor {
-  background-color: #fdfdfd;
-  border: 1px solid #333;
-  padding: 0.83rem 0.58rem;
+  background: none;
+  border-top: 1px solid #999;
+  padding: 0.83rem 0;
 }
 
 /* CodeMirror */
@@ -159,5 +177,6 @@ h6 {
 }
 
 .CodeMirror-linenumber {
+  color: #999;
   padding: 0 0.58rem 0 0;
 }
