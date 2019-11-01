@@ -11,15 +11,20 @@ import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
+import Halogen.Query.EventSource as ES
 
 type Input = { initialContent :: String }
 
 type State =
   { codeMirror :: Maybe CodeMirror
+  , content :: String
   , initialContent :: String
   }
 
-data Action = Initialize | Finalize
+data Action
+  = Initialize
+  | Finalize
+  | HandleChange String
 
 data Query a
 
@@ -44,6 +49,7 @@ component =
 initialState :: Input -> State
 initialState i =
   { codeMirror: Nothing
+  , content: i.initialContent
   , initialContent: i.initialContent
   }
 
@@ -52,10 +58,14 @@ render _ = HH.div [ className "editor" ] [ HH.div [ HP.ref (H.RefLabel "codemirr
 
 handleAction :: forall m. MonadAff m => Action -> H.HalogenM State Action () Msg m Unit
 handleAction = case _ of
+  HandleChange content ->
+    H.modify_ (_ { content = content })
   Initialize -> do
     H.getHTMLElementRef (H.RefLabel "codemirror") >>= traverse_ \element -> do
       { initialContent } <- H.get
       codeMirror <- H.liftEffect $ CodeMirror.initCodeMirror element initialContent
-      H.modify_ (_ { codeMirror = Just codeMirror })
+      void $ H.subscribe $ ES.effectEventSource \emitter -> do
+        CodeMirror.onChange codeMirror (\content -> ES.emit emitter (HandleChange content))
+        pure mempty
   Finalize -> do
     H.modify_ (_ { codeMirror = Nothing })
