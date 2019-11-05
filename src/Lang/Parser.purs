@@ -1,4 +1,4 @@
-module Lang.Parser (Parser, ParseErr, parseMany, parseOne) where
+module Lang.Parser (Parser, ParseErr, parseMany, parseOne, parseSequence) where
 
 import Prelude
 
@@ -18,6 +18,15 @@ import Text.Parsing.Parser.Token as T
 type Parser a = P.Parser String a
 
 type ParseErr = P.ParseError
+
+parseSequence :: String -> Either P.ParseError ExprAnn
+parseSequence = flip P.runParser $ fileOf do
+  begin <- tokenLocation
+  seq <- manyOf exprAnn
+  end <- tokenLocation
+  let srcSpan = { begin, end }
+  let ann = { srcSpan }
+  pure $ ExprAnn (Lst (Cons (ExprAnn (SFrm Do) ann) seq)) ann
 
 parseMany :: String -> Either P.ParseError (List ExprAnn)
 parseMany = flip P.runParser $ fileOf (manyOf exprAnn)
@@ -79,6 +88,8 @@ symbol = annotate $ do
       pure $ SFrm If
     "pause" ->
       pure $ SFrm Pause
+    "print" ->
+      pure $ SFrm Print
     "quote" ->
       pure $ SFrm Quote
     _ ->
@@ -86,14 +97,17 @@ symbol = annotate $ do
 
 annotate :: Parser Expr -> Parser ExprAnn
 annotate p = do
-  begin <- location
+  begin <- tokenLocation
   expr <- p
-  end <- location
-  let srcSpan = { begin: begin, end: end }
-  let ann = { srcSpan: srcSpan }
+  end <- tokenLocation
+  let srcSpan = { begin, end }
+  let ann = { srcSpan }
   pure $ ExprAnn expr ann
-  where location = P.position >>= (pure <<< unwrapPos)
-        unwrapPos (Position loc) = loc
+
+tokenLocation :: Parser { column :: Int, line :: Int }
+tokenLocation = P.position >>= (pure <<< unwrapPos)
+  where
+  unwrapPos (Position loc) = loc
 
 langDef :: T.LanguageDef
 langDef = T.LanguageDef (T.unGenLanguageDef L.emptyDef)

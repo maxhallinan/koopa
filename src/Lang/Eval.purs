@@ -2,8 +2,6 @@ module Lang.Eval (eval) where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadThrow)
-import Control.Monad.Except.Trans (mapExceptT)
 import Control.Monad.State.Trans (withStateT)
 import Control.Monad.State.Trans as S
 import Control.Monad.Trans.Class (lift)
@@ -24,9 +22,11 @@ import Lang.Core
   , ExprAnn(..)
   , ExprTipe(..)
   , Eval
-  , EvalErr
+  , EvalErr(..)
   , EvalState(..)
   , EvalT(..)
+  , LangEffect(..)
+  , ConsoleEffect(..)
   , PrimFns
   , SFrm(..)
   , isTrue
@@ -34,31 +34,34 @@ import Lang.Core
   , mkFalse
   , mkTrue
   , sfrmNumArgs
-  , throw
   , toExprTipe
   , updateEnv
   )
+
+throw :: forall m a. Monad m => Ann -> ErrTipe -> Eval m a
+throw ann name = 
+  yield (Throw $ EvalErr name ann.srcSpan) (\_ -> throw ann name)
 
 numArgsErr :: Int -> Int -> ErrTipe
 numArgsErr expected received = NumArgs { expected, received }
 
 throwNumArgsErr
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
   -> Int
   -> Int
-  -> m a
+  -> Eval m a
 throwNumArgsErr ann expected received =
   throw ann $ numArgsErr expected received
 
 throwSFrmNumArgsErr
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
   -> SFrm
   -> Args
-  -> m a
+  -> Eval m a
 throwSFrmNumArgsErr ann sfrm args = throwNumArgsErr ann expected received
   where expected = sfrmNumArgs sfrm
         received = length args
@@ -68,11 +71,11 @@ wrongTipeErr expected received = WrongTipe { expected, received }
 
 throwWrongTipeErr
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
   -> ExprTipe
   -> ExprTipe
-  -> m a
+  -> Eval m a
 throwWrongTipeErr ann expected received =
   throw ann $ wrongTipeErr expected received
 
@@ -81,11 +84,11 @@ lstLengthErr expected received = LstLength { expected, received }
 
 throwLstLengthErr
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
   -> Int
   -> Int
-  -> m a
+  -> Eval m a
 throwLstLengthErr ann expected received =
   throw ann $ lstLengthErr expected received
 
@@ -94,10 +97,10 @@ unknownVarErr varName = UnknownVar { varName }
 
 throwUnknownVarErr
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
   -> String
-  -> m a
+  -> Eval m a
 throwUnknownVarErr ann varName =
   throw ann $ unknownVarErr varName
 
@@ -106,9 +109,9 @@ unknownErr = UnknownErr
 
 throwUnknownErr
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
-  -> m a
+  -> Eval m a
 throwUnknownErr ann = throw ann unknownErr
 
 emptyFnApplicationErr :: ErrTipe
@@ -116,9 +119,9 @@ emptyFnApplicationErr = EmptyFnApplication
 
 throwEmptyFnApplicationErr
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
-  -> m a
+  -> Eval m a
 throwEmptyFnApplicationErr ann = throw ann emptyFnApplicationErr
 
 trueCondClauseNotFound :: ErrTipe
@@ -126,9 +129,9 @@ trueCondClauseNotFound = TrueCondClauseNotFound
 
 throwTrueCondClauseNotFound
   :: forall m a
-   . MonadThrow EvalErr m
+   . Monad m
   => Ann
-  -> m a
+  -> Eval m a
 throwTrueCondClauseNotFound ann = throw ann trueCondClauseNotFound
 
 eval :: forall m. Monad m => ExprAnn -> Eval m ExprAnn
@@ -145,7 +148,7 @@ eval exprAnn@(ExprAnn expr ann) =
     (Integer _) ->
       done exprAnn
     _ ->
-      lift $ throwUnknownErr ann
+      throwUnknownErr ann
 
 evalSym :: forall m. Monad m => Ann -> String -> Eval m ExprAnn
 evalSym ann name = do
@@ -154,11 +157,12 @@ evalSym ann name = do
     Just expr -> do
       done expr
     Nothing ->
-      lift $ throwUnknownVarErr ann name
+      throwUnknownVarErr ann name
 
 type Args = L.List ExprAnn
 
 evalSFrm :: forall m. Monad m => Ann -> SFrm -> Args -> Eval m ExprAnn
+evalSFrm ann sfrm L.Nil = throwSFrmNumArgsErr ann sfrm L.Nil
 evalSFrm ann Conz args = evalConz ann args
 evalSFrm ann Car args = evalCar ann args
 evalSFrm ann Cdr args = evalCdr ann args
@@ -170,8 +174,8 @@ evalSFrm ann IsAtm args = evalIsAtm ann args
 evalSFrm ann IsEq args = evalIsEq ann args
 evalSFrm ann Lambda args = evalLambda ann args
 evalSFrm ann Pause args = evalPause ann args
+evalSFrm ann Print args = evalPrint ann args
 evalSFrm ann Quote args = evalQuote ann args
-evalSFrm ann sfrm L.Nil = lift $ throwSFrmNumArgsErr ann sfrm L.Nil
 
 evalConz :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalConz ann (L.Cons e1 (L.Cons e2 L.Nil)) = do
@@ -181,8 +185,8 @@ evalConz ann (L.Cons e1 (L.Cons e2 L.Nil)) = do
     (ExprAnn (Lst t') _) ->
       done $ ExprAnn (Lst (L.Cons h t')) ann
     _ ->
-      lift $ throwWrongTipeErr ann LstTipe (toExprTipe t)
-evalConz ann args = lift $ throwSFrmNumArgsErr ann Conz args
+      throwWrongTipeErr ann LstTipe (toExprTipe t)
+evalConz ann args = throwSFrmNumArgsErr ann Conz args
 
 evalDef :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalDef ann (L.Cons e1 (L.Cons e2 L.Nil)) = do
@@ -192,27 +196,27 @@ evalDef ann (L.Cons e1 (L.Cons e2 L.Nil)) = do
       _ <- lift $ updateEnv name val
       done val
     _ ->
-      lift $ throwWrongTipeErr ann SymTipe (toExprTipe e1)
-evalDef ann args = lift $ throwSFrmNumArgsErr ann Def args
+      throwWrongTipeErr ann SymTipe (toExprTipe e1)
+evalDef ann args = throwSFrmNumArgsErr ann Def args
 
 evalCar :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalCar ann (L.Cons e L.Nil) = do
   expr@(ExprAnn xs _) <- eval e
   case xs of
     Lst L.Nil ->
-      lift $ throwLstLengthErr ann 1 0
+      throwLstLengthErr ann 1 0
     Lst (L.Cons h _) ->
       done h
     _ ->
-      lift $ throwWrongTipeErr ann LstTipe (toExprTipe expr)
-evalCar ann args = lift $ throwSFrmNumArgsErr ann Car args
+      throwWrongTipeErr ann LstTipe (toExprTipe expr)
+evalCar ann args = throwSFrmNumArgsErr ann Car args
 
 evalDo :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalDo ann args = do
   results <- traverse eval args
   case L.last results of
     Nothing ->
-      lift $ throwSFrmNumArgsErr ann Do L.Nil
+      throwSFrmNumArgsErr ann Do L.Nil
     Just e ->
       done e
 
@@ -222,7 +226,7 @@ evalIf ann (L.Cons p (L.Cons e1 (L.Cons e2 L.Nil))) = do
   if isTrue p'
   then eval e1
   else eval e2
-evalIf ann args = lift $ throwSFrmNumArgsErr ann If args
+evalIf ann args = throwSFrmNumArgsErr ann If args
 
 evalIsAtm :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalIsAtm ann (L.Cons e L.Nil) = do
@@ -239,7 +243,7 @@ evalIsAtm ann (L.Cons e L.Nil) = do
   where
     t = mkTrue ann
     f = mkFalse ann
-evalIsAtm ann args = lift $ throwSFrmNumArgsErr ann IsAtm args
+evalIsAtm ann args = throwSFrmNumArgsErr ann IsAtm args
 
 evalIsEq :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalIsEq ann (L.Cons e1 (L.Cons e2 L.Nil)) = do
@@ -280,7 +284,7 @@ evalIsEq ann (L.Cons e1 (L.Cons e2 L.Nil)) = do
       else done f
     evalIsEqExprPair :: Tuple ExprAnn ExprAnn -> Eval m ExprAnn
     evalIsEqExprPair (Tuple (ExprAnn x _) (ExprAnn y _)) = evalIsEqExpr x y
-evalIsEq ann args = lift $ throwSFrmNumArgsErr ann IsEq args
+evalIsEq ann args = throwSFrmNumArgsErr ann IsEq args
 
 evalLambda :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalLambda ann (L.Cons params (L.Cons body L.Nil)) = do
@@ -289,12 +293,12 @@ evalLambda ann (L.Cons params (L.Cons body L.Nil)) = do
       env <- lift $ getEnv
       done $ ExprAnn (Fn env params' body) ann
     _ ->
-      lift $ throwWrongTipeErr ann LstTipe (toExprTipe params)
-evalLambda ann args = lift $ throwSFrmNumArgsErr ann Lambda args
+      throwWrongTipeErr ann LstTipe (toExprTipe params)
+evalLambda ann args = throwSFrmNumArgsErr ann Lambda args
 
 evalQuote :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalQuote ann (L.Cons expr L.Nil) = done expr
-evalQuote ann args = lift $ throwSFrmNumArgsErr ann Quote args
+evalQuote ann args = throwSFrmNumArgsErr ann Quote args
 
 evalCdr :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalCdr ann (L.Cons e L.Nil) = do
@@ -304,11 +308,11 @@ evalCdr ann (L.Cons e L.Nil) = do
       done $ ExprAnn (Lst L.Nil) ann
     Lst (L.Cons _ t) ->
       done $ ExprAnn (Lst t) ann
-    _ -> lift $ throwWrongTipeErr ann LstTipe (toExprTipe xs')
-evalCdr ann args = lift $ throwSFrmNumArgsErr ann Cdr args
+    _ -> throwWrongTipeErr ann LstTipe (toExprTipe xs')
+evalCdr ann args = throwSFrmNumArgsErr ann Cdr args
 
 evalCond :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
-evalCond ann L.Nil = lift $ throwSFrmNumArgsErr ann Cond L.Nil
+evalCond ann L.Nil = throwSFrmNumArgsErr ann Cond L.Nil
 evalCond ann clauses = go clauses
   where
     go :: Args -> Eval m ExprAnn
@@ -317,14 +321,19 @@ evalCond ann clauses = go clauses
       if p
       then eval consequent
       else go rest
-    go (L.Cons (ExprAnn (Lst xs) clauseAnn) _) = lift $ throwLstLengthErr clauseAnn 2 (length xs)
-    go (L.Cons expr _) = lift $ throwWrongTipeErr ann LstTipe (toExprTipe expr)
-    go L.Nil = lift $ throwTrueCondClauseNotFound ann
+    go (L.Cons (ExprAnn (Lst xs) clauseAnn) _) = throwLstLengthErr clauseAnn 2 (length xs)
+    go (L.Cons expr _) = throwWrongTipeErr ann LstTipe (toExprTipe expr)
+    go L.Nil = throwTrueCondClauseNotFound ann
 
 evalPause :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalPause ann _ = do
   EvalState { bindings } <- lift S.get
-  yield bindings (\_ -> done $ mkFalse ann)
+  yield (Breakpoint bindings) (\_ -> done $ mkFalse ann)
+
+evalPrint :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
+evalPrint ann args = do
+  args' <- traverse eval args
+  yield (Console $ ConsoleLog args' ann.srcSpan) (\_ -> done $ mkFalse ann)
 
 evalLst :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalLst ann (L.Cons x xs) = do
@@ -334,13 +343,13 @@ evalLst ann (L.Cons x xs) = do
     Fn localEnv params body -> do
       applyLambda ann localEnv params args body
     _ ->
-      lift $ throwWrongTipeErr ann FnTipe (toExprTipe expr)
-evalLst ann L.Nil = lift $ throwEmptyFnApplicationErr ann
+      throwWrongTipeErr ann FnTipe (toExprTipe expr)
+evalLst ann L.Nil = throwEmptyFnApplicationErr ann
 
 applyLambda :: forall m. Monad m => Ann -> Env -> L.List ExprAnn -> L.List ExprAnn -> ExprAnn -> Eval m ExprAnn
 applyLambda ann localEnv params args body = do
   evalState <- bindArgs ann localEnv params args
-  CoroutineT $ EvalT $ mapExceptT (withStateT $ const evalState) ((unwrap <<< unwrap) $ eval body)
+  CoroutineT $ EvalT $ (withStateT $ const evalState) ((unwrap <<< unwrap) $ eval body)
 
 bindArgs :: forall m. Monad m => Ann -> Env -> L.List ExprAnn -> L.List ExprAnn -> Eval m (EvalState (Bindings (PrimFns m)))
 bindArgs ann localEnv params args = do
@@ -359,4 +368,4 @@ bindArgs ann localEnv params args = do
         Sym name ->
           done name
         _ ->
-          lift $ throwWrongTipeErr ann SymTipe (toExprTipe expr)
+          throwWrongTipeErr ann SymTipe (toExprTipe expr)

@@ -10,12 +10,14 @@
     <link rel="preload" as="font" type="font/woff2" href="https://static.maxhallinan.com/fonts/mb/TriplicateT3Code-Regular.woff2" crossorigin/>
   </head>
   <body>
-    <article class="prose">
-      <header>
-        <h1>Koopa</h1>
-        <p class="byline">By <a href="https://maxhallinan.com">Max Hallinan</a></p>
-      </header>
-      <p>A breakpoint debugger for a toy Lisp.</p>
+    <article class="article">
+      <div class="prose">
+        <header>
+          <h1>Koopa</h1>
+          <p class="byline">By <a href="https://maxhallinan.com">Max Hallinan</a></p>
+        </header>
+        <p>A breakpoint debugger for a toy Lisp.</p>
+      </div>
       <figure class="koopa">
         <code>
           <pre>
@@ -26,13 +28,12 @@
 (define member?
   (lambda (x xs)
     (if (null? xs)
-      (quote t)
+      't
       (if (equal? x (car xs))
-        'true
+        't
         (member? x (cdr xs))))))
 
-(define main 
-  (member? 'c '(a b c)))
+(print (member? 'tea '(coffee tea or milk)))
           </pre>
         </code>
       </figure>

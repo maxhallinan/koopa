@@ -65,9 +65,13 @@ h6 {
   font-weight: 800;
 }
 
+.article {
+  padding: 1.2rem 1.44rem;
+}
+
 .prose {
   font-family: "TiemposText", serif;
-  padding: 1.2rem 1.44rem;
+  max-width: 38.34rem;
 }
 
 .prose h1,
@@ -124,8 +128,10 @@ h6 {
 
 .prose p {
   font-size: 1rem;
-  line-height: 1.2;
+  hyphens: auto;
+  line-height: 1.44;
   margin: 0 0 1rem;
+  max-width: 100%;
 }
 
 .prose a,
@@ -137,17 +143,76 @@ h6 {
 }
 
 .koopa {
-  margin: 2.07rem 0;
+  margin: 1.73rem 0;
 }
 
 .koopa:last-of-type {
-  margin-bottom: 0;
+  /* margin-bottom: 0; */
+  max-width: 66.25rem;
+}
+
+.koopa code,
+.koopa code pre {
+  background: none;
+  color: #333;
+  font-family: "TriplicateT3Code", monospace;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.44;
+}
+
+.debugger-body {
+  border: 1px solid #333;
 }
 
 .editor {
   background: none;
-  border-top: 1px solid #999;
-  padding: 0.83rem 0;
+  border-right: 1px solid #333;
+  padding: 0.83rem;
+}
+
+.console-section {
+  display: flex;
+  flex-direction: column;
+  padding: 0.83rem;
+}
+
+.console .console-title {
+  font-size: 0.83rem;
+  margin: 0 0 0.58rem;
+}
+
+.console .console-output {
+  font-family: "TriplicateT3Code", monospace;
+  font-weight: 400;
+  max-height: 300px;
+  overflow: auto;
+}
+
+.console .console-log {
+  flex: 1;
+  font-size: 0.83rem;
+  margin: 0;
+  padding: 0.23rem 0;
+}
+
+.console .console-srcloc {
+  color: #999;
+  text-align: right;
+}
+
+.toolbar {
+  padding: 0.58rem 0 0;
+}
+
+.run-button {
+  background: none;
+  border: 1px solid #333;
+  border-radius: initial;
+  box-shadow: none;
+  cursor: pointer;
+  font-family: "TiemposText", serif;
+  padding: 0.19rem 0.69rem;
 }
 
 /* CodeMirror */
@@ -158,7 +223,7 @@ h6 {
   font-family: "TriplicateT3Code", monospace;
   font-size: 1rem;
   font-weight: 400;
-  height: auto;
+  height: 337px; /* 337 = 13 lines */
   line-height: 1.44;
 }
 

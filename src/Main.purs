@@ -38,9 +38,9 @@ initDebuggers = void <<< traverse init
   init node = case fromNode node of
     Nothing -> pure unit
     Just element -> do
-      initialContent <- map trim (textContent node)
+      initialSourceCode <- map trim (textContent node)
       removeChildren node
-      HA.runHalogenAff $ runUI Debugger.component { initialContent } element
+      HA.runHalogenAff $ runUI Debugger.component { initialSourceCode } element
 
 removeChildren :: Node -> Effect Unit
 removeChildren node =

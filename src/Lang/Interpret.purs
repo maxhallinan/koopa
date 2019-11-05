@@ -3,7 +3,6 @@ module Lang.Interpret (InterpretErr, interpretMany) where
 import Prelude
 
 import Coroutine (runGenerator)
-import Data.Bifunctor (lmap)
 import Data.Either (Either(..))
 import Data.List (List)
 import Data.Traversable (traverse)
@@ -32,4 +31,4 @@ interpretMany bindings src =
       pure $ Left $ ParseErr e
     Right x -> do
       Tuple result _ <- runEvalT bindings (runGenerator (traverse eval x))
-      pure $ lmap EvalErr result
+      pure $ Right result
