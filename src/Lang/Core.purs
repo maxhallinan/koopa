@@ -77,7 +77,7 @@ resultWithEnv
 resultWithEnv (Tuple x (EvalState { bindings })) = Tuple x bindings
 
 data LangEffect m
-  = Breakpoint (Bindings (PrimFns m))
+  = Breakpoint (EvalState (Bindings (PrimFns m))) Ann
   | Console ConsoleEffect
   | Throw EvalErr
 

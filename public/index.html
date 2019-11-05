@@ -28,10 +28,15 @@
 (define member?
   (lambda (x xs)
     (if (null? xs)
-      't
-      (if (equal? x (car xs))
+      (do
+        (pause)
         't
-        (member? x (cdr xs))))))
+        )
+      (if (equal? x (car xs))
+        (do
+          (pause)
+          't)
+        (do (pause) (member? x (cdr xs)))))))
 
 (print (member? 'tea '(coffee tea or milk)))
           </pre>

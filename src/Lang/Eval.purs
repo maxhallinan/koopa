@@ -39,7 +39,7 @@ import Lang.Core
   )
 
 throw :: forall m a. Monad m => Ann -> ErrTipe -> Eval m a
-throw ann name = 
+throw ann name =
   yield (Throw $ EvalErr name ann.srcSpan) (\_ -> throw ann name)
 
 numArgsErr :: Int -> Int -> ErrTipe
@@ -162,6 +162,7 @@ evalSym ann name = do
 type Args = L.List ExprAnn
 
 evalSFrm :: forall m. Monad m => Ann -> SFrm -> Args -> Eval m ExprAnn
+evalSFrm ann Pause args = evalPause ann args
 evalSFrm ann sfrm L.Nil = throwSFrmNumArgsErr ann sfrm L.Nil
 evalSFrm ann Conz args = evalConz ann args
 evalSFrm ann Car args = evalCar ann args
@@ -173,7 +174,6 @@ evalSFrm ann If args = evalIf ann args
 evalSFrm ann IsAtm args = evalIsAtm ann args
 evalSFrm ann IsEq args = evalIsEq ann args
 evalSFrm ann Lambda args = evalLambda ann args
-evalSFrm ann Pause args = evalPause ann args
 evalSFrm ann Print args = evalPrint ann args
 evalSFrm ann Quote args = evalQuote ann args
 
@@ -327,8 +327,8 @@ evalCond ann clauses = go clauses
 
 evalPause :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalPause ann _ = do
-  EvalState { bindings } <- lift S.get
-  yield (Breakpoint bindings) (\_ -> done $ mkFalse ann)
+  evalState <- lift S.get
+  yield (Breakpoint evalState ann) (\_ -> pure $ mkFalse ann)
 
 evalPrint :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalPrint ann args = do
