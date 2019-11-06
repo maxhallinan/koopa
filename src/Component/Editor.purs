@@ -4,6 +4,7 @@ import Prelude
 
 import Component.Editor.CodeMirror (CodeMirror)
 import Component.Editor.CodeMirror as CodeMirror
+import Component.Util (className)
 import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
@@ -58,7 +59,13 @@ initialState i =
   }
 
 render :: forall m. MonadAff m => State -> H.ComponentHTML Action ChildSlots m
-render _ = HH.div [] [ HH.div [ HP.ref (H.RefLabel "codemirror") ] [] ]
+render _ =
+  HH.div
+    [ className "editor" ]
+    [ HH.div
+        [ HP.ref (H.RefLabel "codemirror") ]
+        []
+    ]
 
 handleAction :: forall m. MonadAff m => Action -> H.HalogenM State Action () Msg m Unit
 handleAction = case _ of

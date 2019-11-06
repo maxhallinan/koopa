@@ -4,6 +4,7 @@ import Prelude
 
 import Component.Util (className)
 import Data.Foldable (intercalate)
+import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.List (List)
 import Data.Map (Map)
 import Data.Map as M
@@ -35,7 +36,8 @@ data Action
   = InputReceived Input
   | TabItemClicked Section
 
-data Query a
+data Query next
+  = DisplayBindings (Map String ExprAnn) next
 
 data Msg
 
@@ -43,13 +45,14 @@ type ChildSlots = ()
 
 type Slot = H.Slot Query Msg
 
-component :: forall q m. MonadAff m => H.Component HH.HTML q Input Msg m
+component :: forall m. MonadAff m => H.Component HH.HTML Query Input Msg m
 component =
   H.mkComponent
     { eval:
       H.mkEval
         $ H.defaultEval
           { handleAction = handleAction
+          , handleQuery = handleQuery
           , receive = Just <<< InputReceived
           }
     , initialState
@@ -70,10 +73,20 @@ handleAction = case _ of
   TabItemClicked section ->
     H.modify_ (_ { activeSection = section })
 
+handleQuery
+  :: forall m a
+   . MonadAff m
+  => Query a
+  -> H.HalogenM State Action ChildSlots Msg m (Maybe a)
+handleQuery = case _ of
+  DisplayBindings bindings next -> do
+    H.modify_ (_ { activeSection = Variables, bindings = Just bindings })
+    pure (Just next)
+
 render :: forall m. MonadAff m => State -> H.ComponentHTML Action ChildSlots m
 render state =
   HH.div
-    [ className "console-section" ]
+    [ className "console" ]
     [ renderTabNav state
     , renderActiveSection state
     ]
@@ -129,20 +142,20 @@ renderActiveSection state =
 renderOutput :: forall m. MonadAff m => State -> H.ComponentHTML Action ChildSlots m
 renderOutput state =
   HH.div
-    [ className "console-output" ]
-    $ map renderConsoleEffects state.consoleEffects
+    [ className "console-section console-effects" ]
+    $ map renderConsoleEffect state.consoleEffects
 
-renderConsoleEffects :: forall m. MonadAff m => ConsoleEffect -> H.ComponentHTML Action ChildSlots m
-renderConsoleEffects = case _ of
+renderConsoleEffect :: forall m. MonadAff m => ConsoleEffect -> H.ComponentHTML Action ChildSlots m
+renderConsoleEffect = case _ of
   ConsoleLog exprs srcSpan ->
     HH.p
       [ className "grid console-log" ]
-      [ renderLog exprs
+      [ renderConsoleLog exprs
       , renderSrcLoc srcSpan.begin
       ]
 
-renderLog :: forall m. MonadAff m => List ExprAnn -> H.ComponentHTML Action ChildSlots m
-renderLog exprs =
+renderConsoleLog :: forall m. MonadAff m => List ExprAnn -> H.ComponentHTML Action ChildSlots m
+renderConsoleLog exprs =
   HH.span
     [ className "column small-10" ]
     [ HH.text (intercalate " " $ map show exprs) ]
@@ -155,4 +168,20 @@ renderSrcLoc { column, line } =
 
 renderVariables :: forall m. MonadAff m => State -> H.ComponentHTML Action ChildSlots m
 renderVariables state =
-  HH.text "variables"
+  case state.bindings of
+    Just b ->
+      HH.div
+        [ className "console-section console-variables" ]
+        $ (foldMapWithIndex renderBinding b)
+    Nothing ->
+      HH.text ""
+
+renderBinding :: forall m. MonadAff m => String -> ExprAnn -> Array (H.ComponentHTML Action ChildSlots m)
+renderBinding k v =
+  [ HH.p
+      [ className "console-binding" ]
+      [ HH.text k
+      , HH.text " = "
+      , HH.text $ show v
+      ]
+  ]

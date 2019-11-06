@@ -204,23 +204,31 @@ h6 {
   cursor: initial;
 }
 
-.console-section {
+.tab-item.active button {
+  cursor: initial;
+}
+
+.console {
   display: flex;
   flex-direction: column;
   padding: 0.83rem;
+}
+
+.console-section {
+  max-height: 300px;
+  overflow: auto;
+}
+
+.console-effects,
+.console-variables {
+  font-family: "TriplicateT3Code", monospace;
+  font-weight: 400;
 }
 
 .console .console-title {
   font-family: "TiemposHeadline", serif;
   font-size: 0.83rem;
   margin: 0;
-}
-
-.console .console-output {
-  font-family: "TriplicateT3Code", monospace;
-  font-weight: 400;
-  max-height: 300px;
-  overflow: auto;
 }
 
 .console .console-log {
@@ -233,6 +241,13 @@ h6 {
 .console .console-srcloc {
   color: #999;
   text-align: right;
+}
+
+.console-binding {
+  font-family: "TriplicateT3Code", monospace;
+  font-size: 0.83rem;
+  margin: 0;
+  padding: 0.23rem 0;
 }
 
 .toolbar {

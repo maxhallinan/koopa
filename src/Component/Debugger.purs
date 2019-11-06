@@ -11,6 +11,7 @@ import Coroutine (Yield(..), bounce)
 import Data.Array as A
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
+import Data.Newtype (unwrap)
 import Data.Symbol (SProxy(..))
 import Data.Tuple (fst)
 import Effect.Aff.Class (class MonadAff)
@@ -97,10 +98,10 @@ render state =
     [ HH.div
         [ className "debugger-body grid" ]
         [ HH.div
-            [ className "column small-7 editor" ]
+            [ className "column small-7" ]
             [ HH.slot (SProxy :: _ "editor") unit (H.hoist H.lift Editor.component) editorInput handleEditorMsg ]
         , HH.div
-            [ className "column small-5 console" ]
+            [ className "column small-5" ]
             [ HH.slot (SProxy :: _ "console") unit (H.hoist H.lift Console.component) consoleInput handleConsoleMsg ]
         ]
     , HH.div
@@ -188,6 +189,8 @@ handleLangEffect output = do
       let breakpointState = { continue, evalState, srcSpan: ann.srcSpan }
       H.modify_ \s -> s { interpreterState = Suspended breakpointState }
       void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetCursor ann.srcSpan.begin)
+      let env = _.env (unwrap (_.bindings $ unwrap (evalState)))
+      void $ H.queryAll (SProxy :: SProxy "console") (H.tell $ Console.DisplayBindings env)
     Left (Yield (Console consoleEffect) continue) -> do
       H.modify_ \s -> s { consoleEffects = A.cons consoleEffect s.consoleEffects }
       langEffect <- lift $ bounce (continue unit)
