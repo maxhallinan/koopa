@@ -2,7 +2,6 @@ module Component.Editor where
 
 import Prelude
 
-import Component.Util (className)
 import Component.Editor.CodeMirror (CodeMirror)
 import Component.Editor.CodeMirror as CodeMirror
 import Data.Foldable (traverse_)
@@ -12,6 +11,7 @@ import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Properties as HP
 import Halogen.Query.EventSource as ES
+import Lang.Core (SrcLoc)
 
 type Input = { initialContent :: String }
 
@@ -25,7 +25,10 @@ data Action
   | Finalized
   | EditorChanged String
 
-data Query a
+data Query next
+  = SetCursor SrcLoc next
+  | SetEvalMode next
+  | SetEditMode next
 
 data Msg = ContentChanged String
 
@@ -33,13 +36,14 @@ type ChildSlots = ()
 
 type Slot = H.Slot Query Msg
 
-component :: forall q m. MonadAff m => H.Component HH.HTML q Input Msg m
+component :: forall m. MonadAff m => H.Component HH.HTML Query Input Msg m
 component =
   H.mkComponent
-    { eval: 
-        H.mkEval 
+    { eval:
+        H.mkEval
           $ H.defaultEval
             { handleAction = handleAction
+            , handleQuery = handleQuery
             , initialize = Just Initialized
             , finalize = Just Finalized
             }
@@ -67,5 +71,42 @@ handleAction = case _ of
       void $ H.subscribe $ ES.effectEventSource \emitter -> do
         CodeMirror.onChange codeMirror (\content -> ES.emit emitter (EditorChanged content))
         pure mempty
+      H.modify_ (_ { codeMirror = Just codeMirror })
   Finalized -> do
     H.modify_ (_ { codeMirror = Nothing })
+
+handleQuery
+  :: forall m a
+   . MonadAff m
+  => Query a
+  -> H.HalogenM State Action ChildSlots Msg m (Maybe a)
+handleQuery = case _ of
+  SetCursor srcLoc next -> do
+    { codeMirror } <- H.get
+    case codeMirror of
+      Just cm -> do
+        H.liftEffect
+          $ CodeMirror.setCursor
+            { column: srcLoc.column
+            , line: srcLoc.line - 1  -- CodeMirror line numbers are zero-based
+            }
+            cm
+        pure (Just next)
+      Nothing ->
+        pure (Just next)
+  SetEditMode next -> do
+    { codeMirror } <- H.get
+    case codeMirror of
+      Just cm -> do
+        H.liftEffect $ CodeMirror.styleActiveLine false cm
+        pure (Just next)
+      Nothing ->
+        pure (Just next)
+  SetEvalMode next -> do
+    { codeMirror } <- H.get
+    case codeMirror of
+      Just cm -> do
+        H.liftEffect $ CodeMirror.styleActiveLine true cm
+        pure (Just next)
+      Nothing ->
+        pure (Just next)

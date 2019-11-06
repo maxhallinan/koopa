@@ -49,6 +49,10 @@ body {
   padding: 0;
 }
 
+button::-moz-focus-inner {
+  border: 0;
+}
+
 figure {
   margin: 0;
   padding: 0;

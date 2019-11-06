@@ -1,4 +1,5 @@
 const CodeMirror = require('codemirror');
+require('codemirror/addon/selection/active-line.js')
 
 exports._initCodeMirror = function (element, value) {
   const codeMirror = CodeMirror(element, {
@@ -17,4 +18,15 @@ exports._onChange = function (codeMirror, handler) {
     // perform the effect.
     handler(value)();
   });
+};
+
+exports._setCursor = function (srcPos, codeMirror) {
+  codeMirror.setCursor({
+    ch: srcPos.column,
+    line: srcPos.line,
+  });
+};
+
+exports._styleActiveLine = function (isStyled, codeMirror) {
+  codeMirror.setOption("styleActiveLine", isStyled);
 };

@@ -173,6 +173,7 @@ interpret sourceCode = do
     Left parseError -> do
       H.modify_ (_ { interpreterState = Ready })
     Right expr -> do
+      void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEvalMode)
       langEffect <- lift $ bounce (eval expr)
       handleLangEffect langEffect
 
@@ -186,12 +187,15 @@ handleLangEffect output = do
     Left (Yield (Breakpoint evalState ann) continue) -> do
       let breakpointState = { continue, evalState, srcSpan: ann.srcSpan }
       H.modify_ \s -> s { interpreterState = Suspended breakpointState }
+      void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetCursor ann.srcSpan.begin)
     Left (Yield (Console consoleEffect) continue) -> do
       H.modify_ \s -> s { consoleEffects = A.cons consoleEffect s.consoleEffects }
       langEffect <- lift $ bounce (continue unit)
       handleLangEffect langEffect
     Left (Yield (Throw evalError) _) -> do
       -- TODO: update state with eval error
+      void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEditMode)
       H.modify_ (_ { interpreterState = Ready })
-    Right r ->
+    Right r -> do
+      void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEditMode)
       H.modify_ (_ { interpreterState = Ready })
