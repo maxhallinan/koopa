@@ -175,6 +175,35 @@ h6 {
   padding: 0.83rem;
 }
 
+.tab-nav {
+  display: flex;
+  margin: 0 0 0.58rem;
+}
+
+.tab-item {
+  color: #999;
+  padding-right: 0.83rem;
+}
+
+.tab-item.active {
+  color: #333;
+}
+
+.tab-item button {
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  margin: 0;
+  padding: 0;
+}
+
+.tab-item button:disabled {
+  cursor: initial;
+}
+
 .console-section {
   display: flex;
   flex-direction: column;
@@ -182,8 +211,9 @@ h6 {
 }
 
 .console .console-title {
+  font-family: "TiemposHeadline", serif;
   font-size: 0.83rem;
-  margin: 0 0 0.58rem;
+  margin: 0;
 }
 
 .console .console-output {
