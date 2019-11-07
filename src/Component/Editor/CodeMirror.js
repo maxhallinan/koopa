@@ -30,3 +30,8 @@ exports._setCursor = function (srcPos, codeMirror) {
 exports._styleActiveLine = function (isStyled, codeMirror) {
   codeMirror.setOption("styleActiveLine", isStyled);
 };
+
+exports._setReadOnly = function (isReadOnly, codeMirror) {
+  const readOnly = isReadOnly ? 'nocursor' : false;
+  codeMirror.setOption("readOnly", readOnly);
+}

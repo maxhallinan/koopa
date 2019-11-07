@@ -106,6 +106,7 @@ handleQuery = case _ of
     case codeMirror of
       Just cm -> do
         H.liftEffect $ CodeMirror.styleActiveLine false cm
+        H.liftEffect $ CodeMirror.setReadOnly false cm
         pure (Just next)
       Nothing ->
         pure (Just next)
@@ -114,6 +115,7 @@ handleQuery = case _ of
     case codeMirror of
       Just cm -> do
         H.liftEffect $ CodeMirror.styleActiveLine true cm
+        H.liftEffect $ CodeMirror.setReadOnly true cm
         pure (Just next)
       Nothing ->
         pure (Just next)
