@@ -9,3 +9,5 @@
 /.psa*
 /.spago
 public/bundle.js
+.s3cmd
+dist

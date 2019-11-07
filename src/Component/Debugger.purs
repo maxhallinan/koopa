@@ -96,13 +96,16 @@ render state =
   HH.div
     [ className "debugger" ]
     [ HH.div
-        [ className "debugger-body grid" ]
+        [ className "grid" ]
         [ HH.div
-            [ className "column small-7" ]
-            [ HH.slot (SProxy :: _ "editor") unit (H.hoist H.lift Editor.component) editorInput handleEditorMsg ]
-        , HH.div
-            [ className "column small-5" ]
-            [ HH.slot (SProxy :: _ "console") unit (H.hoist H.lift Console.component) consoleInput handleConsoleMsg ]
+            [ className "debugger-body column small-11 grid"]
+            [ HH.div
+                [ className "column small-8" ]
+                [ HH.slot (SProxy :: _ "editor") unit (H.hoist H.lift Editor.component) editorInput handleEditorMsg ]
+            , HH.div
+                [ className "column small-4" ]
+                [ HH.slot (SProxy :: _ "console") unit (H.hoist H.lift Console.component) consoleInput handleConsoleMsg ]
+            ]
         ]
     , HH.div
         [ className "toolbar" ]

@@ -2,7 +2,10 @@
   "name": "logo-lang",
   "version": "0.1.0",
   "scripts": {
-    "test": "spago test --main Test.Main; spago test --main Test.Golden"
+    "build": "rm -rf ./dist && npx spago bundle-app --main Main --to public/bundle.js && npx parcel build public/index.html",
+    "deploy": "npm run build && scripts/deploy.sh",
+    "postinstall": "npx spago install",
+    "test": "npx spago test --main Test.Main; npx spago test --main Test.Golden"
   },
   "author": {
     "name": "Max Hallinan",
@@ -11,5 +14,10 @@
   },
   "dependencies": {
     "codemirror": "^5.49.2"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4",
+    "purescript": "^0.13.4",
+    "spago": "^0.10.0"
   }
 }
