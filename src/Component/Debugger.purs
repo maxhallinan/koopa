@@ -198,6 +198,7 @@ handleLangEffect output = do
       H.modify_ (_ { interpreterState = Ready })
     Right r -> do
       void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEditMode)
+      void $ H.queryAll (SProxy :: SProxy "console") (H.tell $ Console.ClearBindings)
       H.modify_ (_ { interpreterState = Ready })
 
 callContinue

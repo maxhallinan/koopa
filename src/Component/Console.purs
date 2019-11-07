@@ -37,6 +37,7 @@ data Action
 
 data Query next
   = DisplayBindings (Map String ExprAnn) next
+  | ClearBindings next
 
 data Msg
 
@@ -80,6 +81,9 @@ handleQuery
 handleQuery = case _ of
   DisplayBindings bindings next -> do
     H.modify_ (_ { activeSection = Variables, bindings = Just bindings })
+    pure (Just next)
+  ClearBindings next -> do
+    H.modify_ (_ { activeSection = Output, bindings = Nothing })
     pure (Just next)
 
 render :: forall m. MonadAff m => State -> H.ComponentHTML Action ChildSlots m
