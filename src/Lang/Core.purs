@@ -1,31 +1,4 @@
-module Lang.Core
-  ( Ann(..)
-  , Bindings(..)
-  , Env
-  , ErrTipe(..)
-  , Expr(..)
-  , ExprAnn(..)
-  , ExprTipe(..)
-  , Eval
-  , EvalErr(..)
-  , EvalState(..)
-  , EvalT(..)
-  , LangEffect(..)
-  , ConsoleEffect(..)
-  , PrimFns(..)
-  , getEnv
-  , isFalse
-  , isTrue
-  , mkFalse
-  , mkTrue
-  , runEvalT
-  , SrcLoc(..)
-  , SrcSpan(..)
-  , SFrm(..)
-  , sfrmNumArgs
-  , toExprTipe
-  , updateEnv
-  ) where
+module Lang.Core where
 
 import Prelude
 
@@ -40,45 +13,38 @@ import Data.List as L
 import Data.Map (Map)
 import Data.Map as M
 import Data.Newtype (class Newtype, unwrap)
-import Data.Tuple (Tuple(..))
+import Data.Tuple (Tuple)
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 
-type Eval m = CoroutineT (Yield Unit (LangEffect m)) (EvalT (Bindings (PrimFns m)) m)
+type Eval m = EvalCoroutine (EvalState (Bindings (PrimFns m))) m
 
-newtype EvalT bindings m a = EvalT (StateT (EvalState bindings) m a)
+type EvalCoroutine s m = CoroutineT (Yield Unit (LangEffect s)) (EvalT s m)
 
-derive instance newtypeEvalT :: Newtype (EvalT r m a) _
-derive newtype instance functorEvalT :: Functor m => Functor (EvalT r m)
-derive newtype instance applyEvalT :: Monad m => Apply (EvalT r m)
-derive newtype instance applicativeEvalT :: Monad m => Applicative (EvalT r m)
-derive newtype instance bindEvalT :: Monad m => Bind (EvalT r m)
-derive newtype instance monadEvalT :: Monad m => Monad (EvalT r m)
-derive newtype instance monadStateEvalT :: Monad m => MonadState (EvalState r) (EvalT r m)
-derive newtype instance monadTransEvalT :: MonadTrans (EvalT r)
-derive newtype instance monadEffect :: MonadEffect m => MonadEffect (EvalT r m)
-derive newtype instance monadAff :: MonadAff m => MonadAff (EvalT r m)
+newtype EvalT s m a = EvalT (StateT s m a)
+
+derive instance newtypeEvalT :: Newtype (EvalT s m a) _
+derive newtype instance functorEvalT :: Functor m => Functor (EvalT s m)
+derive newtype instance applyEvalT :: Monad m => Apply (EvalT s m)
+derive newtype instance applicativeEvalT :: Monad m => Applicative (EvalT s m)
+derive newtype instance bindEvalT :: Monad m => Bind (EvalT s m)
+derive newtype instance monadEvalT :: Monad m => Monad (EvalT s m)
+derive newtype instance monadStateEvalT :: Monad m => MonadState s (EvalT s m)
+derive newtype instance monadTransEvalT :: MonadTrans (EvalT s)
+derive newtype instance monadEffect :: MonadEffect m => MonadEffect (EvalT s m)
+derive newtype instance monadAff :: MonadAff m => MonadAff (EvalT s m)
 
 runEvalT
-  :: forall bindings m a
+  :: forall s m a
    . Monad m
-  => bindings
-  -> EvalT bindings m a
-  -> m (Tuple a bindings)
-runEvalT bindings evaled = resultWithEnv <$> rn evaled
-  where
-    evalState = EvalState { bindings }
-    rn = flip runStateT evalState <<< unwrap
+  => s
+  -> EvalT s m a
+  -> m (Tuple a s)
+runEvalT evalState = flip runStateT evalState <<< unwrap
 
-resultWithEnv
-  :: forall a bindings
-   . Tuple a (EvalState bindings)
-  -> Tuple a bindings
-resultWithEnv (Tuple x (EvalState { bindings })) = Tuple x bindings
-
-data LangEffect m
-  = Breakpoint (EvalState (Bindings (PrimFns m))) Ann
-  | Console ConsoleEffect
+data LangEffect s
+  = Breakpoint Ann s
+  | Console ConsoleEffect s
   | Throw EvalErr
 
 data ConsoleEffect
@@ -117,10 +83,10 @@ newtype EvalState bindings = EvalState { bindings :: bindings }
 
 derive instance evalStateNewtype :: Newtype (EvalState a) _
 
-getEnv :: forall r m. Monad m => EvalT (Bindings r) m Env
+getEnv :: forall r m. Monad m => EvalT (EvalState (Bindings r)) m Env
 getEnv = S.get >>= (unwrap >>> _.bindings >>> unwrap >>> _.env >>> pure)
 
-updateEnv :: forall m. Monad m => String -> ExprAnn -> EvalT (Bindings (PrimFns m)) m Unit
+updateEnv :: forall m. Monad m => String -> ExprAnn -> EvalT (EvalState (Bindings (PrimFns m))) m Unit
 updateEnv key val =
   S.modify_ \(EvalState s@({ bindings: Bindings b })) ->
     EvalState $ s { bindings = Bindings b { env = M.insert key val b.env } }

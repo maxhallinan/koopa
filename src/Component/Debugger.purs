@@ -18,7 +18,7 @@ import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Lang.Core (Bindings, ConsoleEffect, Eval, EvalState, EvalT(..), ExprAnn, LangEffect(..), PrimFns, SrcSpan, runEvalT)
+import Lang.Core (Bindings, ConsoleEffect, Eval, EvalState(..), EvalT(..), ExprAnn, LangEffect(..), PrimFns, SrcSpan, runEvalT)
 import Lang.Eval (eval)
 import Lang.Parser (parseSequence)
 
@@ -70,9 +70,9 @@ component = H.hoist runEval
 runEval
   :: forall m
    . MonadAff m
-  => (EvalT (Bindings (PrimFns m)) m)
+  => (EvalT (EvalState (Bindings (PrimFns m))) m)
   ~> m
-runEval = map fst <<< runEvalT mempty
+runEval = map fst <<< runEvalT (EvalState { bindings: mempty })
 
 initialState :: forall m. MonadAff m => Input -> State m
 initialState i =
@@ -86,7 +86,7 @@ render
   :: forall m
    . MonadAff m
   => State m
-  -> H.ComponentHTML Action ChildSlots (EvalT (Bindings (PrimFns m)) m)
+  -> H.ComponentHTML Action ChildSlots (EvalT (EvalState (Bindings (PrimFns m))) m)
 render state =
   let
     editorInput = { initialContent: state.sourceCode }
@@ -114,7 +114,7 @@ renderEvalButton
   :: forall m
    . MonadAff m
   => State m
-  -> H.ComponentHTML Action ChildSlots (EvalT (Bindings (PrimFns m)) m)
+  -> H.ComponentHTML Action ChildSlots (EvalT (EvalState (Bindings (PrimFns m))) m)
 renderEvalButton state =
   case state.interpreterState of
     Ready ->
@@ -146,7 +146,7 @@ handleAction
   :: forall m o
    . MonadAff m
   => Action
-  -> H.HalogenM (State m) Action ChildSlots o (EvalT (Bindings (PrimFns m)) m) Unit
+  -> H.HalogenM (State m) Action ChildSlots o (EvalT (EvalState (Bindings (PrimFns m))) m) Unit
 handleAction = case _ of
   RunClicked -> do
     { sourceCode } <- H.modify (_ { interpreterState = Running })
@@ -156,9 +156,7 @@ handleAction = case _ of
     case interpreterState of
       Suspended { continue, evalState } -> do
         H.modify_ (_ { interpreterState = Running })
-        let EvalT stateT = bounce (continue unit)
-        langEffect <- lift $ EvalT $ withStateT (const evalState) stateT
-        handleLangEffect langEffect
+        callContinue evalState continue
       _ ->
         pure unit
   SourceCodeChanged sourceCode ->
@@ -168,7 +166,7 @@ interpret
   :: forall m o
    . MonadAff m
   => String
-  -> H.HalogenM (State m) Action ChildSlots o (EvalT (Bindings (PrimFns m)) m) Unit
+  -> H.HalogenM (State m) Action ChildSlots o (EvalT (EvalState (Bindings (PrimFns m))) m) Unit
 interpret sourceCode = do
   case parseSequence sourceCode of
     Left parseError -> do
@@ -181,20 +179,19 @@ interpret sourceCode = do
 handleLangEffect
   :: forall m o
    . MonadAff m
-  => Either (Yield Unit (LangEffect m) (Eval m ExprAnn)) ExprAnn
-  -> H.HalogenM (State m) Action ChildSlots o (EvalT (Bindings (PrimFns m)) m) Unit
+  => Either (Yield Unit (LangEffect (EvalState (Bindings (PrimFns m)))) (Eval m ExprAnn)) ExprAnn
+  -> H.HalogenM (State m) Action ChildSlots o (EvalT (EvalState (Bindings (PrimFns m))) m) Unit
 handleLangEffect output = do
   case output of
-    Left (Yield (Breakpoint evalState ann) continue) -> do
+    Left (Yield (Breakpoint ann evalState) continue) -> do
       let breakpointState = { continue, evalState, srcSpan: ann.srcSpan }
       H.modify_ \s -> s { interpreterState = Suspended breakpointState }
       void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetCursor ann.srcSpan.begin)
       let env = _.env (unwrap (_.bindings $ unwrap (evalState)))
       void $ H.queryAll (SProxy :: SProxy "console") (H.tell $ Console.DisplayBindings env)
-    Left (Yield (Console consoleEffect) continue) -> do
+    Left (Yield (Console consoleEffect evalState) continue) -> do
       H.modify_ \s -> s { consoleEffects = A.cons consoleEffect s.consoleEffects }
-      langEffect <- lift $ bounce (continue unit)
-      handleLangEffect langEffect
+      callContinue evalState continue
     Left (Yield (Throw evalError) _) -> do
       -- TODO: update state with eval error
       void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEditMode)
@@ -202,3 +199,16 @@ handleLangEffect output = do
     Right r -> do
       void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEditMode)
       H.modify_ (_ { interpreterState = Ready })
+
+callContinue
+  :: forall o m
+   . MonadAff m
+  => EvalState (Bindings (PrimFns m))
+  -> (Unit -> Eval m ExprAnn)
+  -> H.HalogenM (State m) Action ChildSlots o (EvalT (EvalState (Bindings (PrimFns m))) m) Unit
+callContinue evalState continue = do
+  let EvalT stateT = bounce (continue unit)
+  -- Because HalogenM is not a monad transformer, the eval state is not
+  -- preserved during the component lifcycle: https://github.com/slamdata/purescript-halogen/issues/386
+  langEffect <- lift $ EvalT $ withStateT (const evalState) stateT
+  handleLangEffect langEffect

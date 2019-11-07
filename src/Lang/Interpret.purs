@@ -7,7 +7,7 @@ import Data.Either (Either(..))
 import Data.List (List)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import Lang.Core (Bindings, EvalErr, ExprAnn, PrimFns, runEvalT)
+import Lang.Core (Bindings, EvalErr, EvalState(..), ExprAnn, PrimFns, runEvalT)
 import Lang.Eval (eval)
 import Lang.Parser (ParseErr, parseMany)
 
@@ -30,5 +30,5 @@ interpretMany bindings src =
     Left e ->
       pure $ Left $ ParseErr e
     Right x -> do
-      Tuple result _ <- runEvalT bindings (runGenerator (traverse eval x))
+      Tuple result _ <- runEvalT (EvalState { bindings }) (runGenerator (traverse eval x))
       pure $ Right result

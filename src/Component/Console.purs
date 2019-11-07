@@ -7,7 +7,6 @@ import Data.Foldable (intercalate)
 import Data.FoldableWithIndex (foldMapWithIndex)
 import Data.List (List)
 import Data.Map (Map)
-import Data.Map as M
 import Data.Maybe (Maybe(..))
 import Effect.Aff.Class (class MonadAff)
 import Halogen as H

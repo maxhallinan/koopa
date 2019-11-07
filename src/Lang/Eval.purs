@@ -328,12 +328,13 @@ evalCond ann clauses = go clauses
 evalPause :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalPause ann _ = do
   evalState <- lift S.get
-  yield (Breakpoint evalState ann) (\_ -> pure $ mkFalse ann)
+  yield (Breakpoint ann evalState) (\_ -> pure $ mkFalse ann)
 
 evalPrint :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalPrint ann args = do
   args' <- traverse eval args
-  yield (Console $ ConsoleLog args' ann.srcSpan) (\_ -> done $ mkFalse ann)
+  evalState <- lift S.get
+  yield (Console (ConsoleLog args' ann.srcSpan) evalState) (\_ -> done $ mkFalse ann)
 
 evalLst :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalLst ann (L.Cons x xs) = do
