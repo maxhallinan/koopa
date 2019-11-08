@@ -18,9 +18,9 @@ import Effect.Aff.Class (class MonadAff)
 import Halogen as H
 import Halogen.HTML as HH
 import Halogen.HTML.Events as HE
-import Lang.Core (Bindings, ConsoleEffect, Eval, EvalState(..), EvalT(..), ExprAnn, LangEffect(..), PrimFns, SrcSpan, runEvalT)
+import Lang.Core (Bindings, ConsoleEffect(..), Eval, EvalState(..), EvalErr(..), EvalT(..), ExprAnn, LangEffect(..), PrimFns, SrcSpan, runEvalT)
 import Lang.Eval (eval)
-import Lang.Parser (parseSequence)
+import Lang.Parser (parseSequence, parseErrMsg, parseErrSrcLoc)
 
 type Input = { initialSourceCode :: String }
 
@@ -173,7 +173,10 @@ interpret
 interpret sourceCode = do
   case parseSequence sourceCode of
     Left parseError -> do
-      H.modify_ (_ { interpreterState = Ready })
+      let consoleError = ConsoleError (parseErrMsg parseError) (parseErrSrcLoc parseError)
+      H.modify_ \s -> s { consoleEffects = A.cons consoleError s.consoleEffects
+                        , interpreterState = Ready
+                        }
     Right expr -> do
       void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEvalMode)
       langEffect <- lift $ bounce (eval expr)
@@ -195,8 +198,9 @@ handleLangEffect output = do
     Left (Yield (Console consoleEffect evalState) continue) -> do
       H.modify_ \s -> s { consoleEffects = A.cons consoleEffect s.consoleEffects }
       callContinue evalState continue
-    Left (Yield (Throw evalError) _) -> do
-      -- TODO: update state with eval error
+    Left (Yield (Throw evalError@(EvalErr _ srcSpan)) _) -> do
+      let consoleError = ConsoleError (show evalError) srcSpan.begin
+      H.modify_ \s -> s { consoleEffects = A.cons consoleError s.consoleEffects }
       void $ H.queryAll (SProxy :: SProxy "editor") (H.tell $ Editor.SetEditMode)
       H.modify_ (_ { interpreterState = Ready })
     Right r -> do

@@ -231,11 +231,16 @@ h6 {
   margin: 0;
 }
 
+.console .console-error,
 .console .console-log {
   flex: 1;
   font-size: 0.83rem;
   margin: 0;
   padding: 0.23rem 0;
+}
+
+.console .console-error {
+  color: #eb5a46;
 }
 
 .console .console-srcloc {

@@ -48,7 +48,8 @@ data LangEffect s
   | Throw EvalErr
 
 data ConsoleEffect
-  = ConsoleLog (List ExprAnn) SrcSpan
+  = ConsoleLog (List ExprAnn) SrcLoc
+  | ConsoleError String SrcLoc
 
 data EvalErr = EvalErr ErrTipe SrcSpan
 

@@ -150,11 +150,17 @@ renderOutput state =
 
 renderConsoleEffect :: forall m. MonadAff m => ConsoleEffect -> H.ComponentHTML Action ChildSlots m
 renderConsoleEffect = case _ of
-  ConsoleLog exprs srcSpan ->
+  ConsoleLog exprs srcLoc ->
     HH.p
       [ className "grid console-log" ]
       [ renderConsoleLog exprs
-      , renderSrcLoc srcSpan.begin
+      , renderSrcLoc srcLoc
+      ]
+  ConsoleError msg srcLoc ->
+    HH.p
+      [ className "grid console-error" ]
+      [ renderConsoleError msg
+      , renderSrcLoc srcLoc
       ]
 
 renderConsoleLog :: forall m. MonadAff m => List ExprAnn -> H.ComponentHTML Action ChildSlots m
@@ -162,6 +168,12 @@ renderConsoleLog exprs =
   HH.span
     [ className "column small-10" ]
     [ HH.text (intercalate " " $ map show exprs) ]
+
+renderConsoleError :: forall m. MonadAff m => String -> H.ComponentHTML Action ChildSlots m
+renderConsoleError errorMsg =
+  HH.span
+    [ className "column small-10" ]
+    [ HH.text errorMsg ]
 
 renderSrcLoc :: forall m. MonadAff m => SrcLoc -> H.ComponentHTML Action ChildSlots m
 renderSrcLoc { column, line } =

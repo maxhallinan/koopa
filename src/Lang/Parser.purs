@@ -1,10 +1,18 @@
-module Lang.Parser (Parser, ParseErr, parseMany, parseOne, parseSequence) where
+module Lang.Parser
+  ( Parser
+  , ParseErr
+  , parseErrMsg
+  , parseErrSrcLoc
+  , parseMany
+  , parseOne
+  , parseSequence
+  ) where
 
 import Prelude
 
 import Control.Alt ((<|>))
 import Control.Lazy (fix)
-import Lang.Core (Expr(..), ExprAnn(..), SFrm(..))
+import Lang.Core (Expr(..), ExprAnn(..), SFrm(..), SrcLoc)
 import Data.Either (Either)
 import Data.List (List(..), manyRec)
 import Data.String.CodeUnits (toCharArray)
@@ -16,8 +24,6 @@ import Text.Parsing.Parser.String as S
 import Text.Parsing.Parser.Token as T
 
 type Parser a = P.Parser String a
-
-type ParseErr = P.ParseError
 
 parseSequence :: String -> Either P.ParseError ExprAnn
 parseSequence = flip P.runParser $ fileOf do
@@ -127,3 +133,11 @@ identLetter = identStart <|> T.digit <|> oneOf ".+-"
 
 oneOf :: String -> Parser Char
 oneOf = S.oneOf <<< toCharArray
+
+type ParseErr = P.ParseError
+
+parseErrSrcLoc :: ParseErr -> SrcLoc
+parseErrSrcLoc (P.ParseError _ (Position srcLoc)) = srcLoc
+
+parseErrMsg :: ParseErr -> String
+parseErrMsg (P.ParseError msg _) = msg

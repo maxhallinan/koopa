@@ -334,7 +334,7 @@ evalPrint :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalPrint ann args = do
   args' <- traverse eval args
   evalState <- lift S.get
-  yield (Console (ConsoleLog args' ann.srcSpan) evalState) (\_ -> done $ mkFalse ann)
+  yield (Console (ConsoleLog args' ann.srcSpan.begin) evalState) (\_ -> done $ mkFalse ann)
 
 evalLst :: forall m. Monad m => Ann -> Args -> Eval m ExprAnn
 evalLst ann (L.Cons x xs) = do
