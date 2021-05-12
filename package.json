@@ -13,7 +13,7 @@
     "url": "www.maxhallinan.com"
   },
   "dependencies": {
-    "codemirror": "^5.49.2"
+    "codemirror": "^5.58.2"
   },
   "devDependencies": {
     "parcel-bundler": "^1.12.4",
